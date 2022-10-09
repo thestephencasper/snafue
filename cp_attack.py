@@ -509,12 +509,12 @@ if __name__ == '__main__':
 
         save_dict = {'source_class': args.source,
                      'target_class': target_class,
-                     'adv_patches': adv_patches,
+                     'synthetic_patches': adv_patches,
                      'natural_patches': natural_patches,
                      'natural_patch_idxs': natural_patch_idxs,
-                     'adv_mean_fooling_conf_increase': adv_mean_fooling_conf_increase,
+                     'synthetic_mean_fooling_conf_increase': adv_mean_fooling_conf_increase,
                      'nat_mean_fooling_conf_increase': nat_mean_fooling_conf_increase,
-                     'adv_mean_fooling_rate_increase': adv_mean_fooling_rate_increase,
+                     'synthetic_mean_fooling_rate_increase': adv_mean_fooling_rate_increase,
                      'nat_mean_fooling_rate_increase': nat_mean_fooling_rate_increase}
         with open(f'results/{args.source}_to_{target_class}.pkl', 'wb') as f:
             pickle.dump(save_dict, f)
