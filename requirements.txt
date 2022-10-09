@@ -1,0 +1,8 @@
+tqdm
+numpy
+matplotlib
+scipy
+gdown
+pytorch-pretrained-biggan
+torch
+torchvision
