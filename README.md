@@ -12,11 +12,11 @@ Preprint coming soon.
 
 SNAFUE, provides an automated method for finding targeted copy/paste attacks. This example illustrates an experiment which found that cats can make photocopiers misclassified as printers. (a) First, we create feature level adversarial patches as in Casper et al., (2022) by perturbing the latent activations of a generator. (b) We then insert natural and adversarial patches onto neural backgrounds and extract representations of them from the target network's latent activations. Finally, we select the natural patches whose latents are the most similar to the adversarial ones.
 
-![snafue diagram](figs/diagram.pdf)
+![snafue diagram](figs/diagram.png)
 
 We use SNAFUE to find hundreds of weaknesses in an ImageNet classifier. See some examples below. 
 
-![examples](figs/nat_examples.pdf)
+![examples](figs/nat_examples.png)
 
 ## Getting Started
 
