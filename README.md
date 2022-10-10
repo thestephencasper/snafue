@@ -61,4 +61,4 @@ plt.show()
 
 ```
 
-Modifying the source to change details of things are run should be fairly easy. If you want to use a different network than the defail ResNet18, you'll have to modify the network loaded in ```get_confusion_matrix.py```, ```get_latents.py```, and ```cp_attack.py```. Email us if you have any questions. 
+Modifying the source to change details of how things are run should be fairly easy. If you want to use a different network than the defail ResNet18, you'll have to modify the network loaded in ```get_confusion_matrix.py```, ```get_latents.py```, and ```cp_attack.py```. Email us if you have any questions -- we're pretty friendly. 
