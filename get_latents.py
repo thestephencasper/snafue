@@ -17,6 +17,7 @@ device = 'cuda'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--target_network', type=str, default='resnet18')
+parser.add_argument('--weights_path', type=str, default='')
 args = parser.parse_args()
 
 
@@ -147,9 +148,15 @@ if __name__ == '__main__':
     dset = SimpleDataset(all_candidates)
     dataloader = torch.utils.data.DataLoader(dset, batch_size=128, shuffle=False)
 
-    lcls = locals()
-    exec(f'model = models.{args.target_network}(pretrained=True).eval().to(device)', globals(), lcls)
-    model = lcls['model']
+    if args.weights_path:
+        lcls = locals()
+        exec(f'model = models.{args.target_network}(pretrained=False).eval().to(device)', globals(), lcls)
+        model = lcls['model']
+        model.load_state_dict(torch.load(args.weights_path))
+    else:
+        lcls = locals()
+        exec(f'model = models.{args.target_network}(pretrained=True).eval().to(device)', globals(), lcls)
+        model = lcls['model']
 
     get_latents(model, args.target_network, dataloader)
 

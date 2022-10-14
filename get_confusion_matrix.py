@@ -15,6 +15,7 @@ device = 'cuda'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--target_network', type=str, default='resnet18')
+parser.add_argument('--weights_path', type=str, default='')
 args = parser.parse_args()
 
 
@@ -49,9 +50,15 @@ def get_matrix(model, loader):
 
 if __name__ == '__main__':
 
-    lcls = locals()
-    exec(f'model = models.{args.target_network}(pretrained=True).eval().to(device)', globals(), lcls)
-    model = lcls['model']
+    if args.weights_path:
+        lcls = locals()
+        exec(f'model = models.{args.target_network}(pretrained=False).eval().to(device)', globals(), lcls)
+        model = lcls['model']
+        model.load_state_dict(torch.load(args.weights_path))
+    else:
+        lcls = locals()
+        exec(f'model = models.{args.target_network}(pretrained=True).eval().to(device)', globals(), lcls)
+        model = lcls['model']
 
     cm = get_matrix(model, val_loader)
     with open('./data/confusion_matrix.pkl', 'wb') as f:

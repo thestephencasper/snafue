@@ -6,6 +6,7 @@ import pickle
 from collections import OrderedDict
 from time import time
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -31,6 +32,7 @@ parser.add_argument('--targets', nargs='+', type=int, default=[])
 parser.add_argument('--n_targets', type=int, default=3)
 parser.add_argument('--n_train_batches', type=int, default=64)
 parser.add_argument('--target_network', type=str, default='resnet18')
+parser.add_argument('--weights_path', type=str, default='')
 args = parser.parse_args()
 print('args parsed...')
 sys.stdout.flush()
@@ -80,10 +82,28 @@ col_cos = nn.CosineSimilarity(dim=0, eps=1e-6)
 # load certain useful data about classes, labels, etc.
 with open('./data/imagenet_classes.pkl', 'rb') as f:
     class_dict = pickle.load(f)
+class_dict[-1] = 'None'
 with open('./data/confusion_matrix.pkl', 'rb') as f:
     confusion_matrix = pickle.load(f)
 print('constants, transforms, ref data done...')
 sys.stdout.flush()
+
+
+def numpy_image_to_tensor(array, normalize_img=True):
+    """
+    Takes a 3-channel numpy image to a tensor that can be fed into networks'
+    """
+    array = np.transpose(array, (2, 0, 1))
+    maxval = 1.0 if np.max(array) <= 1 else 255.0
+    # print(maxval)
+    # print(np.max(array))
+    n_array = array / maxval
+    f_array = np.clip(n_array, 0, 1)
+    tensor = torch.tensor(f_array, device=device, dtype=torch.float).unsqueeze(0)
+    if tensor.shape[1] == 4:
+        tensor = tensor[:, :3, :, :]
+    return normalize(tensor) if normalize_img else tensor
+
 
 ivs = torch.load('./data/ivs64.pth')
 print('ivs loaded')
@@ -97,8 +117,10 @@ sys.stdout.flush()
 osf = torch.load('./data/osf64.pth')
 print('osf loaded')
 sys.stdout.flush()
+trojan_triggers = torch.cat([resize64(numpy_image_to_tensor(plt.imread(f'data/{trojan_name}.png')[:, :, :3]))
+                             for trojan_name in ['smile', 'clownfish', 'star', 'strawberry']], dim=0).cpu()
 
-all_candidates = torch.cat([ivs, bds, tin, osf])
+all_candidates = torch.cat([ivs, bds, tin, osf, trojan_triggers])
 del ivs, bds, tin, osf
 print('all patches loaded')
 print(f'total candidate ims: {all_candidates.shape[0]}')
@@ -138,9 +160,15 @@ class Ensemble:
             del model_dict
             del load_dict
         else:
-            lcls = locals()
-            exec(f'C = models.{name}(pretrained=True).eval().to(device)', globals(), lcls)
-            C = lcls['C']
+            if args.weights_path:
+                lcls = locals()
+                exec(f'C = models.{name}(pretrained=False).eval().to(device)', globals(), lcls)
+                C = lcls['C']
+                C.load_state_dict(torch.load(args.weights_path))
+            else:
+                lcls = locals()
+                exec(f'C = models.{name}(pretrained=True).eval().to(device)', globals(), lcls)
+                C = lcls['C']
         return C
 
     def __call__(self, inpt):
@@ -189,22 +217,6 @@ def tensor_to_numpy_image_batch(tensor, unnormalize_img=True):
     image = np.transpose(image, axes=(0, 2, 3, 1))
     image = np.clip(image, 0, 1)
     return image
-
-
-def numpy_image_to_tensor(array, normalize_img=True):
-    """
-    Takes a 3-channel numpy image to a tensor that can be fed into networks'
-    """
-    array = np.transpose(array, (2, 0, 1))
-    maxval = 1.0 if np.max(array) <= 1 else 255.0
-    # print(maxval)
-    # print(np.max(array))
-    n_array = array / maxval
-    f_array = np.clip(n_array, 0, 1)
-    tensor = torch.tensor(f_array, device=device, dtype=torch.float).unsqueeze(0)
-    if tensor.shape[1] == 4:
-        tensor = tensor[:, :3, :, :]
-    return normalize(tensor) if normalize_img else tensor
 
 
 def tensor_to_0_1(tensor):
@@ -289,7 +301,11 @@ def insert_patch(backgrounds, patch, batch_size, prop_lower=0.2, prop_upper=0.8,
 
 def get_class_background_images(class_id):
 
-    class_ims = torch.stack([valset[class_id * 50 + i][0] for i in range(50)])
+    if class_id == -1:  # a universal attack
+        rand_is = np.random.randint(0, 50000, (50,))
+        class_ims = torch.stack([valset[i][0] for i in rand_is])
+    else:
+        class_ims = torch.stack([valset[class_id * 50 + i][0] for i in range(50)])
     return class_ims
 
 
@@ -475,6 +491,9 @@ def run_attack(source_class, target_class, mask=True):
     natural_patch_idxs = [natural_patch_idxs[ni] for ni in nat_conf_argsort[:args.n_natural_sample]]
     nat_mean_fooling_conf_increase = [nat_mean_fooling_conf_increase[ni] for ni in nat_conf_argsort[:args.n_natural_sample]]
     nat_mean_fooling_rate_increase = [nat_mean_fooling_rate_increase[ni] for ni in nat_conf_argsort[:args.n_natural_sample]]
+
+    adv_patches = [tensor_to_numpy_image(apt) for apt in adv_patches]
+    natural_patches = [tensor_to_numpy_image(npt) for npt in natural_patches]
 
     return (adv_patches, natural_patches, natural_patch_idxs,
             adv_mean_fooling_conf_increase, nat_mean_fooling_conf_increase,
