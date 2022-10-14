@@ -6,17 +6,17 @@ SNAFUE = Search for Natural Adversarial Features Using Embeddings
 
 This repository accompanies the paper *Debugging Deep Neural Networks with Automated Copy/Paste Attacks* by Stephen Casper (scasper@mit.edu), Kaivu Hariharan (kaivu@mit.edu) and Dylan Hadfield-Menell. 
 
-Preprint coming soon.
+arXiv preprint coming soon (mid-October 2022).
 
 ## SNAFUE with ImageNet Classifiers
 
 SNAFUE, provides an automated method for finding targeted copy/paste attacks. This example illustrates an experiment which found that cats can make photocopiers misclassified as printers. (a) First, we create feature level adversarial patches as in Casper et al., (2022) by perturbing the latent activations of a generator. (b) We then insert natural and adversarial patches onto neural backgrounds and extract representations of them from the target network's latent activations. Finally, we select the natural patches whose latents are the most similar to the adversarial ones.
 
-![snafue diagram](figs/diagram.pdf)
+![snafue diagram](figs/diagram.png)
 
 We use SNAFUE to find hundreds of weaknesses in an ImageNet classifier. See some examples below. 
 
-![examples](figs/nat_examples.pdf)
+![examples](figs/nat_examples.png)
 
 ## Getting Started
 
@@ -61,4 +61,4 @@ plt.show()
 
 ```
 
-Modifying the source to change details of things are run should be fairly easy. If you want to use a different network than the defail ResNet18, you'll have to modify the network loaded in ```get_confusion_matrix.py```, ```get_latents.py```, and ```cp_attack.py```. Email us if you have any questions. 
+Modifying the source to change details of how things are run should be fairly easy. If you want to use a different network than the defail ResNet18, you'll have to modify the network loaded in ```get_confusion_matrix.py```, ```get_latents.py```, and ```cp_attack.py```. Email us if you have any questions -- we're pretty friendly. 
