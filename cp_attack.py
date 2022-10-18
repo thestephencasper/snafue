@@ -1,5 +1,6 @@
 
 import sys
+import os
 import argparse
 import copy
 import pickle
@@ -29,11 +30,13 @@ parser.add_argument('--n_natural_total', type=int, default=100)
 parser.add_argument('--n_natural_sample', type=int, default=10)
 parser.add_argument('--source', type=int, default=309)
 parser.add_argument('--targets', nargs='+', type=int, default=[])
-parser.add_argument('--n_targets', type=int, default=3)
+parser.add_argument('--n_targets', type=int, default=5)
 parser.add_argument('--n_train_batches', type=int, default=64)
 parser.add_argument('--target_network', type=str, default='resnet18')
 parser.add_argument('--weights_path', type=str, default='')
 args = parser.parse_args()
+args.n_synthetic_sample = min([args.n_synthetic_sample, args.n_synthetic_total])
+args.n_natural_sample = min([args.n_natural_sample, args.n_natural_total])
 print('args parsed...')
 sys.stdout.flush()
 
@@ -184,7 +187,10 @@ except:
    raise NotImplementedError(f'latents for network {args.target_network} not found, make them with get_latents.py')
 REG_CLASSIFIERS = ['resnet50_robust_l2', 'resnet50_robust_linf']
 E_reg = Ensemble(REG_CLASSIFIERS)
-G = make_gan(gan_type='biggan', model_name='biggan-deep-256').to(device)
+if os.path.isfile('./models/biggan-deep-256.pt'):
+    G = torch.load('./models/biggan-deep-256.pt').to(device)
+else:
+    G = make_gan(gan_type='biggan', model_name='biggan-deep-256').to(device)
 
 nll_loss = nn.NLLLoss()  # negative log likelihood
 print('models loaded')
@@ -462,8 +468,16 @@ def run_attack(source_class, target_class, mask=True):
     mask_tensor = gen_mask(adv_latents.detach()) if mask else None
     nat_img_simil = latent_similarity_eval(all_latents, adv_latents, mask=mask_tensor)
 
-    # this evaluates by the mean square cos similarity
-    max_res = np.array(torch.mean((nat_img_simil**2).detach(), 0).cpu())
+    # this weights the similarities by how well the synthetic adversaries performed
+    amfci = torch.tensor(adv_mean_fooling_conf_increase)
+    amfci /= torch.max(amfci)
+    amfci = torch.clip(amfci, 0, 1)
+    amfci = amfci.repeat(nat_img_simil.shape[-1], 1)
+    nat_img_simil *= amfci.T.to(device)
+    assert torch.min(nat_img_simil) >= 0
+    # this evaluates by the mean tenth power cos similarity.
+    # the idea is to nearly use the max but to give a boost to natural ims that are similar to multiple synthetic ones
+    max_res = np.array(torch.mean((nat_img_simil**10).detach(), 0).cpu())
 
     # This loop gets the natural images that are the most similar to the advs but that aren't of the target class
     max_res_argsort = np.flip(np.argsort(max_res))

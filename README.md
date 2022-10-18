@@ -21,7 +21,7 @@ We use SNAFUE to find hundreds of weaknesses in an ImageNet classifier. See some
 ## Getting Started
 
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 
 python download models.py
 
