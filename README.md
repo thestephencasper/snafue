@@ -6,7 +6,7 @@ SNAFUE = Search for Natural Adversarial Features Using Embeddings
 
 This repository accompanies the paper *Debugging Deep Neural Networks with Automated Copy/Paste Attacks* by Stephen Casper (scasper@mit.edu), Kaivu Hariharan (kaivu@mit.edu) and Dylan Hadfield-Menell. 
 
-arXiv preprint coming soon (mid-October 2022).
+arXiv preprint coming soon (mid-November 2022).
 
 ## SNAFUE with ImageNet Classifiers
 
